@@ -1,4 +1,4 @@
-# Ember Communication Pattern Library
+# Ember Parallel Process Communication Pattern Library
 
 Multi-node communication patterns underpin the scalability and parallel performance of the Department of Energy, and broader HPC workloads. Correct modeling of these patterns is as important aspect of extreme scaled supercomputing systems. To date, many vendors have relied on communication traces which can be difficult to obtain at scale, and take significant I/O storage. For interconnect simulators, the reading and replay of traces requires high-performance I/O subsystems which are often expensive and may be unavailable. To this end, the Ember suite provides communication patterns in a simplified setting (simplified by the removal of application calculations, control flow etc.). This enables more efficient traces to be captured, or in the cases of the Structural Simulation Toolkit (SST), these patterns can be easily replicated without tracing using the Ember/SST motif library. The intention of Ember is to enable much larger-scale modeling of high-performance interconnects to achieve DOE's goal of scalable Exascale computing systems.
 
