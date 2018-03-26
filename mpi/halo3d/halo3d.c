@@ -60,6 +60,7 @@ int main(int argc, char* argv[]) {
 	int nz = 10;
 
 	int repeats = 100;
+	int vars = 1;
 
 	for(int i = 1; i < argc; i++) {
 		if( strcmp(argv[i], "-nx") == 0 ) {
@@ -139,6 +140,17 @@ int main(int argc, char* argv[]) {
 
 			repeats = atoi(argv[i+1]);
 			++i;
+		} else if( strcmp(argv[i], "-vars") == 0 ) {
+			if( i == argc ) {
+				if(me == 0) {
+					fprintf(stderr, "Error: specified -vars without a value.\n");
+				}
+
+				exit(-1);
+			}
+
+			vars = atoi(argv[i+1]);
+			++i;
 		} else {
 			if( 0 == me ) {
 				fprintf(stderr, "Unknown option: %s\n", argv[i]);
@@ -167,6 +179,7 @@ int main(int argc, char* argv[]) {
 		printf("# Processor Grid:         %7d x %7d x %7d\n", pex, pey, pez);
 		printf("# Data Grid (per rank):   %7d x %7d x %7d\n", nx, ny, nz);
 		printf("# Iterations:             %7d\n", repeats);
+		printf("# Variables:              %7d\n", vars);
 	}
 
 	int posX, posY, posZ;
@@ -186,39 +199,39 @@ int main(int argc, char* argv[]) {
 	MPI_Request* requests;
 	requests = (MPI_Request*) malloc( sizeof(MPI_Request) * 4);
 
-	double* xUpSendBuffer = (double*) malloc( sizeof(double) * ny * nz );
-	double* xUpRecvBuffer = (double*) malloc( sizeof(double) * ny * nz );
+	double* xUpSendBuffer = (double*) malloc( sizeof(double) * ny * nz * vars );
+	double* xUpRecvBuffer = (double*) malloc( sizeof(double) * ny * nz * vars );
 
-	double* xDownSendBuffer = (double*) malloc( sizeof(double) * ny * nz );
-	double* xDownRecvBuffer = (double*) malloc( sizeof(double) * ny * nz );
+	double* xDownSendBuffer = (double*) malloc( sizeof(double) * ny * nz * vars );
+	double* xDownRecvBuffer = (double*) malloc( sizeof(double) * ny * nz * vars );
 
-	for(int i = 0; i < ny * nz; i++) {
+	for(int i = 0; i < ny * nz * vars; i++) {
 		xUpSendBuffer[i] = i;
 		xUpRecvBuffer[i] = i;
 		xDownSendBuffer[i] = i;
 		xDownRecvBuffer[i] = i;
 	}
 
-	double* yUpSendBuffer = (double*) malloc( sizeof(double) * nx * nz );
-	double* yUpRecvBuffer = (double*) malloc( sizeof(double) * nx * nz );
+	double* yUpSendBuffer = (double*) malloc( sizeof(double) * nx * nz * vars );
+	double* yUpRecvBuffer = (double*) malloc( sizeof(double) * nx * nz * vars );
 
-	double* yDownSendBuffer = (double*) malloc( sizeof(double) * nx * nz );
-	double* yDownRecvBuffer = (double*) malloc( sizeof(double) * nx * nz );
+	double* yDownSendBuffer = (double*) malloc( sizeof(double) * nx * nz * vars );
+	double* yDownRecvBuffer = (double*) malloc( sizeof(double) * nx * nz * vars );
 
-	for(int i = 0; i < nx * nz; i++) {
+	for(int i = 0; i < nx * nz * vars; i++) {
 		yUpSendBuffer[i] = i;
 		yUpRecvBuffer[i] = i;
 		yDownSendBuffer[i] = i;
 		yDownRecvBuffer[i] = i;
 	}
 
-	double* zUpSendBuffer = (double*) malloc( sizeof(double) * nx * ny );
-	double* zUpRecvBuffer = (double*) malloc( sizeof(double) * nx * ny );
+	double* zUpSendBuffer = (double*) malloc( sizeof(double) * nx * ny * vars );
+	double* zUpRecvBuffer = (double*) malloc( sizeof(double) * nx * ny * vars );
 
-	double* zDownSendBuffer = (double*) malloc( sizeof(double) * nx * ny );
-	double* zDownRecvBuffer = (double*) malloc( sizeof(double) * nx * ny );
+	double* zDownSendBuffer = (double*) malloc( sizeof(double) * nx * ny * vars );
+	double* zDownRecvBuffer = (double*) malloc( sizeof(double) * nx * ny * vars );
 
-	for(int i = 0; i < nx * ny; i++) {
+	for(int i = 0; i < nx * ny * vars; i++) {
 		zUpSendBuffer[i] = i;
 		zUpRecvBuffer[i] = i;
 		zDownSendBuffer[i] = i;
@@ -234,39 +247,39 @@ int main(int argc, char* argv[]) {
 		requestcount = 0;
 
 		if( xUp > -1 ) {
-			MPI_Irecv(xUpRecvBuffer, ny * nz, MPI_DOUBLE, xUp, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
-			MPI_Isend(xUpSendBuffer, ny * nz, MPI_DOUBLE, xUp, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Irecv(xUpRecvBuffer, ny * nz * vars, MPI_DOUBLE, xUp, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend(xUpSendBuffer, ny * nz * vars, MPI_DOUBLE, xUp, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
 		}
 
 		if( xDown > -1 ) {
-			MPI_Irecv(xDownRecvBuffer, ny * nz, MPI_DOUBLE, xDown, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
-			MPI_Isend(xDownSendBuffer, ny * nz, MPI_DOUBLE, xDown, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Irecv(xDownRecvBuffer, ny * nz * vars, MPI_DOUBLE, xDown, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend(xDownSendBuffer, ny * nz * vars, MPI_DOUBLE, xDown, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
 		}
 
 		MPI_Waitall(requestcount, requests, status);
 		requestcount = 0;
 
 		if( yUp > -1 ) {
-			MPI_Irecv(yUpRecvBuffer, nx * nz, MPI_DOUBLE, yUp, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
-			MPI_Isend(yUpSendBuffer, nx * nz, MPI_DOUBLE, yUp, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Irecv(yUpRecvBuffer, nx * nz * vars, MPI_DOUBLE, yUp, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend(yUpSendBuffer, nx * nz * vars, MPI_DOUBLE, yUp, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
 		}
 
 		if( yDown > -1 ) {
-			MPI_Irecv(yDownRecvBuffer, nx * nz, MPI_DOUBLE, yDown, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
-			MPI_Isend(yDownSendBuffer, nx * nz, MPI_DOUBLE, yDown, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Irecv(yDownRecvBuffer, nx * nz * vars, MPI_DOUBLE, yDown, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend(yDownSendBuffer, nx * nz * vars, MPI_DOUBLE, yDown, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
 		}
 
 		MPI_Waitall(requestcount, requests, status);
 		requestcount = 0;
 
 		if( zUp > -1 ) {
-			MPI_Irecv(zUpRecvBuffer, nx * ny, MPI_DOUBLE, zUp, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
-			MPI_Isend(zUpSendBuffer, nx * ny, MPI_DOUBLE, zUp, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Irecv(zUpRecvBuffer, nx * ny * vars, MPI_DOUBLE, zUp, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend(zUpSendBuffer, nx * ny * vars, MPI_DOUBLE, zUp, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
 		}
 
 		if( zDown > -1 ) {
-			MPI_Irecv(zDownRecvBuffer, nx * ny, MPI_DOUBLE, zDown, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
-			MPI_Isend(zDownSendBuffer, nx * ny, MPI_DOUBLE, zDown, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Irecv(zDownRecvBuffer, nx * ny * vars, MPI_DOUBLE, zDown, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend(zDownSendBuffer, nx * ny * vars, MPI_DOUBLE, zDown, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
 		}
 
 		MPI_Waitall(requestcount, requests, status);
@@ -290,14 +303,14 @@ int main(int argc, char* argv[]) {
 		const double timeTaken = ( ((double) end.tv_sec) + ((double) end.tv_usec) * 1.0e-6 ) -
 			( ((double) start.tv_sec) + ((double) start.tv_usec) * 1.0e-6 );
 		const double bytesXchng =
-			((double)( xUp > -1 ? sizeof(double) * ny * nz * 2: 0 )) +
-			((double)( xDown > -1 ? sizeof(double) * ny * nz * 2: 0 )) +
-			((double)( yUp > -1 ? sizeof(double) * nx * nz * 2: 0 )) +
-			((double)( yDown > -1 ? sizeof(double) * nx * nz * 2: 0 )) +
-			((double)( zUp > -1 ? sizeof(double) * nx * ny * 2: 0 )) +
-			((double)( zDown > -1 ? sizeof(double) * nx * ny * 2: 0 ));
+			((double)( xUp > -1 ? sizeof(double) * ny * nz * 2 * vars : 0 )) +
+			((double)( xDown > -1 ? sizeof(double) * ny * nz * 2 * vars : 0 )) +
+			((double)( yUp > -1 ? sizeof(double) * nx * nz * 2 * vars : 0 )) +
+			((double)( yDown > -1 ? sizeof(double) * nx * nz * 2 * vars : 0 )) +
+			((double)( zUp > -1 ? sizeof(double) * nx * ny * 2 * vars : 0 )) +
+			((double)( zDown > -1 ? sizeof(double) * nx * ny * 2 * vars : 0 ));
 
-		printf("# %20s %20s %20s\n", "Time", "KBytesXchng/PE-Max", "MB/S");
+		printf("# %20s %20s %20s\n", "Time", "KBytesXchng/Rank-Max", "MB/S/Rank");
 		printf("  %20.6f %20.4f %20.4f\n",
 			timeTaken, bytesXchng / 1024.0, (bytesXchng / 1024.0) / timeTaken );
 	}
