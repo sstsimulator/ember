@@ -201,57 +201,157 @@ int main(int argc, char* argv[]) {
 	int posX, posY, posZ;
 	get_position(me, pex, pey, pez, &posX, &posY, &posZ);
 
-	int xUp   = convert_position_to_rank(pex, pey, pez, posX + 1, posY, posZ);
-	int xDown = convert_position_to_rank(pex, pey, pez, posX - 1, posY, posZ);
-	int yUp   = convert_position_to_rank(pex, pey, pez, posX, posY + 1, posZ);
-	int yDown = convert_position_to_rank(pex, pey, pez, posX, posY - 1, posZ);
-	int zUp   = convert_position_to_rank(pex, pey, pez, posX, posY, posZ + 1);
-	int zDown = convert_position_to_rank(pex, pey, pez, posX, posY, posZ - 1);
+	const int xFaceUp   = convert_position_to_rank(pex, pey, pez, posX + 1, posY, posZ);
+	const int xFaceDown = convert_position_to_rank(pex, pey, pez, posX - 1, posY, posZ);
+	const int yFaceUp   = convert_position_to_rank(pex, pey, pez, posX, posY + 1, posZ);
+	const int yFaceDown = convert_position_to_rank(pex, pey, pez, posX, posY - 1, posZ);
+	const int zFaceUp   = convert_position_to_rank(pex, pey, pez, posX, posY, posZ + 1);
+	const int zFaceDown = convert_position_to_rank(pex, pey, pez, posX, posY, posZ - 1);
+
+	const int vertexA   = convert_position_to_rank(pex, pey, pez, posX - 1, posY - 1, posZ - 1);
+	const int vertexB   = convert_position_to_rank(pex, pey, pez, posX - 1, posY - 1, posZ + 1);
+	const int vertexC   = convert_position_to_rank(pex, pey, pez, posX - 1, posY + 1, posZ - 1);
+	const int vertexD   = convert_position_to_rank(pex, pey, pez, posX - 1, posY + 1, posZ + 1);
+	const int vertexE   = convert_position_to_rank(pex, pey, pez, posX + 1, posY - 1, posZ - 1);
+	const int vertexF   = convert_position_to_rank(pex, pey, pez, posX + 1, posY - 1, posZ + 1);
+	const int vertexG   = convert_position_to_rank(pex, pey, pez, posX + 1, posY + 1, posZ - 1);
+	const int vertexH   = convert_position_to_rank(pex, pey, pez, posX + 1, posY + 1, posZ + 1);
+
+	const int edgeA     = convert_position_to_rank(pex, pey, pez, posX - 1, posY - 1, posZ);
+	const int edgeB     = convert_position_to_rank(pex, pey, pez, posX, posY - 1, posZ - 1);
+	const int edgeC     = convert_position_to_rank(pex, pey, pez, posX + 1, posY - 1, posZ);
+	const int edgeD     = convert_position_to_rank(pex, pey, pez, posX, posY - 1, posZ + 1);
+	const int edgeE     = convert_position_to_rank(pex, pey, pez, posX - 1, posY, posZ + 1);
+	const int edgeF     = convert_position_to_rank(pex, pey, pez, posX + 1, posY, posZ + 1);
+	const int edgeG     = convert_position_to_rank(pex, pey, pez, posX - 1, posY, posZ - 1);
+	const int edgeH     = convert_position_to_rank(pex, pey, pez, posX + 1, posY, posZ - 1);
+	const int edgeI     = convert_position_to_rank(pex, pey, pez, posX - 1, posY + 1, posZ);
+	const int edgeJ     = convert_position_to_rank(pex, pey, pez, posX, posY + 1, posZ + 1);
+	const int edgeK     = convert_position_to_rank(pex, pey, pez, posX + 1, posY + 1, posZ);
+	const int edgeL     = convert_position_to_rank(pex, pey, pez, posX, posY + 1, posZ - 1);
+
+	double send_vertexA = 1.0;
+	double send_vertexB = 1.0;
+	double send_vertexC = 1.0;
+	double send_vertexD = 1.0;
+	double send_vertexE = 1.0;
+	double send_vertexF = 1.0;
+	double send_vertexG = 1.0;
+	double send_vertexH = 1.0;
+
+	double recv_vertexA = 1.0;
+	double recv_vertexB = 1.0;
+	double recv_vertexC = 1.0;
+	double recv_vertexD = 1.0;
+	double recv_vertexE = 1.0;
+	double recv_vertexF = 1.0;
+	double recv_vertexG = 1.0;
+	double recv_vertexH = 1.0;
 
 	int requestcount = 0;
 	MPI_Status* status;
-	status = (MPI_Status*) malloc( sizeof(MPI_Status) * 4);
+	status = (MPI_Status*) malloc( sizeof(MPI_Status) * 52);
 
 	MPI_Request* requests;
-	requests = (MPI_Request*) malloc( sizeof(MPI_Request) * 4);
+	requests = (MPI_Request*) malloc( sizeof(MPI_Request) * 52);
 
-	double* xUpSendBuffer = (double*) malloc( sizeof(double) * ny * nz * vars );
-	double* xUpRecvBuffer = (double*) malloc( sizeof(double) * ny * nz * vars );
+	double* edgeASendBuffer = (double*) malloc( sizeof(double) * nz * vars);
+	double* edgeBSendBuffer = (double*) malloc( sizeof(double) * nx * vars);
+	double* edgeCSendBuffer = (double*) malloc( sizeof(double) * nz * vars);
+	double* edgeDSendBuffer = (double*) malloc( sizeof(double) * nx * vars);
+	double* edgeESendBuffer = (double*) malloc( sizeof(double) * ny * vars);
+	double* edgeFSendBuffer = (double*) malloc( sizeof(double) * ny * vars);
+	double* edgeGSendBuffer = (double*) malloc( sizeof(double) * ny * vars);
+	double* edgeHSendBuffer = (double*) malloc( sizeof(double) * ny * vars);
+	double* edgeISendBuffer = (double*) malloc( sizeof(double) * nz * vars);
+	double* edgeJSendBuffer = (double*) malloc( sizeof(double) * nx * vars);
+	double* edgeKSendBuffer = (double*) malloc( sizeof(double) * nz * vars);
+	double* edgeLSendBuffer = (double*) malloc( sizeof(double) * nx * vars);
 
-	double* xDownSendBuffer = (double*) malloc( sizeof(double) * ny * nz * vars );
-	double* xDownRecvBuffer = (double*) malloc( sizeof(double) * ny * nz * vars );
+	double* edgeARecvBuffer = (double*) malloc( sizeof(double) * nz * vars);
+	double* edgeBRecvBuffer = (double*) malloc( sizeof(double) * nx * vars);
+	double* edgeCRecvBuffer = (double*) malloc( sizeof(double) * nz * vars);
+	double* edgeDRecvBuffer = (double*) malloc( sizeof(double) * nx * vars);
+	double* edgeERecvBuffer = (double*) malloc( sizeof(double) * ny * vars);
+	double* edgeFRecvBuffer = (double*) malloc( sizeof(double) * ny * vars);
+	double* edgeGRecvBuffer = (double*) malloc( sizeof(double) * ny * vars);
+	double* edgeHRecvBuffer = (double*) malloc( sizeof(double) * ny * vars);
+	double* edgeIRecvBuffer = (double*) malloc( sizeof(double) * nz * vars);
+	double* edgeJRecvBuffer = (double*) malloc( sizeof(double) * nx * vars);
+	double* edgeKRecvBuffer = (double*) malloc( sizeof(double) * nz * vars);
+	double* edgeLRecvBuffer = (double*) malloc( sizeof(double) * nx * vars);
+
+	for( int i = 0 ; i < nz ; ++i ) {
+		edgeASendBuffer[i] = (double) i;
+		edgeARecvBuffer[i] = 0.0;
+		edgeCSendBuffer[i] = (double) i;
+		edgeCRecvBuffer[i] = 0.0;
+		edgeISendBuffer[i] = (double) i;
+		edgeIRecvBuffer[i] = 0.0;
+		edgeKSendBuffer[i] = (double) i;
+		edgeKRecvBuffer[i] = 0.0;
+	}
+
+	for( int i = 0 ; i < ny ; ++i ) {
+		edgeESendBuffer[i] = (double) i;
+		edgeERecvBuffer[i] = 0.0;
+		edgeFSendBuffer[i] = (double) i;
+		edgeFRecvBuffer[i] = 0.0;
+		edgeGSendBuffer[i] = (double) i;
+		edgeGRecvBuffer[i] = 0.0;
+		edgeHSendBuffer[i] = (double) i;
+		edgeHRecvBuffer[i] = 0.0;
+	}
+
+
+	for( int i = 0 ; i < nx ; ++i ) {
+		edgeBSendBuffer[i] = (double) i;
+		edgeBRecvBuffer[i] = 0.0;
+		edgeDSendBuffer[i] = (double) i;
+		edgeDRecvBuffer[i] = 0.0;
+		edgeJSendBuffer[i] = (double) i;
+		edgeJRecvBuffer[i] = 0.0;
+		edgeLSendBuffer[i] = (double) i;
+		edgeLRecvBuffer[i] = 0.0;
+	}
+
+	double* xFaceUpSendBuffer = (double*) malloc( sizeof(double) * ny * nz * vars );
+	double* xFaceUpRecvBuffer = (double*) malloc( sizeof(double) * ny * nz * vars );
+
+	double* xFaceDownSendBuffer = (double*) malloc( sizeof(double) * ny * nz * vars );
+	double* xFaceDownRecvBuffer = (double*) malloc( sizeof(double) * ny * nz * vars );
 
 	for(int i = 0; i < ny * nz * vars; i++) {
-		xUpSendBuffer[i] = i;
-		xUpRecvBuffer[i] = i;
-		xDownSendBuffer[i] = i;
-		xDownRecvBuffer[i] = i;
+		xFaceUpSendBuffer[i] = i;
+		xFaceUpRecvBuffer[i] = i;
+		xFaceDownSendBuffer[i] = i;
+		xFaceDownRecvBuffer[i] = i;
 	}
 
-	double* yUpSendBuffer = (double*) malloc( sizeof(double) * nx * nz * vars );
-	double* yUpRecvBuffer = (double*) malloc( sizeof(double) * nx * nz * vars );
+	double* yFaceUpSendBuffer = (double*) malloc( sizeof(double) * nx * nz * vars );
+	double* yFaceUpRecvBuffer = (double*) malloc( sizeof(double) * nx * nz * vars );
 
-	double* yDownSendBuffer = (double*) malloc( sizeof(double) * nx * nz * vars );
-	double* yDownRecvBuffer = (double*) malloc( sizeof(double) * nx * nz * vars );
+	double* yFaceDownSendBuffer = (double*) malloc( sizeof(double) * nx * nz * vars );
+	double* yFaceDownRecvBuffer = (double*) malloc( sizeof(double) * nx * nz * vars );
 
 	for(int i = 0; i < nx * nz * vars; i++) {
-		yUpSendBuffer[i] = i;
-		yUpRecvBuffer[i] = i;
-		yDownSendBuffer[i] = i;
-		yDownRecvBuffer[i] = i;
+		yFaceUpSendBuffer[i] = i;
+		yFaceUpRecvBuffer[i] = i;
+		yFaceDownSendBuffer[i] = i;
+		yFaceDownRecvBuffer[i] = i;
 	}
 
-	double* zUpSendBuffer = (double*) malloc( sizeof(double) * nx * ny * vars );
-	double* zUpRecvBuffer = (double*) malloc( sizeof(double) * nx * ny * vars );
+	double* zFaceUpSendBuffer = (double*) malloc( sizeof(double) * nx * ny * vars );
+	double* zFaceUpRecvBuffer = (double*) malloc( sizeof(double) * nx * ny * vars );
 
-	double* zDownSendBuffer = (double*) malloc( sizeof(double) * nx * ny * vars );
-	double* zDownRecvBuffer = (double*) malloc( sizeof(double) * nx * ny * vars );
+	double* zFaceDownSendBuffer = (double*) malloc( sizeof(double) * nx * ny * vars );
+	double* zFaceDownRecvBuffer = (double*) malloc( sizeof(double) * nx * ny * vars );
 
 	for(int i = 0; i < nx * ny * vars; i++) {
-		zUpSendBuffer[i] = i;
-		zUpRecvBuffer[i] = i;
-		zDownSendBuffer[i] = i;
-		zDownRecvBuffer[i] = i;
+		zFaceUpSendBuffer[i] = i;
+		zFaceUpRecvBuffer[i] = i;
+		zFaceDownSendBuffer[i] = i;
+		zFaceDownRecvBuffer[i] = i;
 	}
 
 	struct timeval start;
@@ -272,40 +372,94 @@ int main(int argc, char* argv[]) {
 			while( nanosleep( &remainTS, &remainTS ) == EINTR );
 		}
 
-		if( xUp > -1 ) {
-			MPI_Irecv(xUpRecvBuffer, ny * nz * vars, MPI_DOUBLE, xUp, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
-			MPI_Isend(xUpSendBuffer, ny * nz * vars, MPI_DOUBLE, xUp, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
+		if( xFaceUp > -1 ) {
+			MPI_Irecv(xFaceUpRecvBuffer, ny * nz * vars, MPI_DOUBLE, xFaceUp, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend(xFaceUpSendBuffer, ny * nz * vars, MPI_DOUBLE, xFaceUp, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
 		}
 
-		if( xDown > -1 ) {
-			MPI_Irecv(xDownRecvBuffer, ny * nz * vars, MPI_DOUBLE, xDown, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
-			MPI_Isend(xDownSendBuffer, ny * nz * vars, MPI_DOUBLE, xDown, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
+		if( xFaceDown > -1 ) {
+			MPI_Irecv(xFaceDownRecvBuffer, ny * nz * vars, MPI_DOUBLE, xFaceDown, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend(xFaceDownSendBuffer, ny * nz * vars, MPI_DOUBLE, xFaceDown, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
 		}
 
-		MPI_Waitall(requestcount, requests, status);
-		requestcount = 0;
-
-		if( yUp > -1 ) {
-			MPI_Irecv(yUpRecvBuffer, nx * nz * vars, MPI_DOUBLE, yUp, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
-			MPI_Isend(yUpSendBuffer, nx * nz * vars, MPI_DOUBLE, yUp, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
+		if( yFaceUp > -1 ) {
+			MPI_Irecv(yFaceUpRecvBuffer, nx * nz * vars, MPI_DOUBLE, yFaceUp, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend(yFaceUpSendBuffer, nx * nz * vars, MPI_DOUBLE, yFaceUp, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
 		}
 
-		if( yDown > -1 ) {
-			MPI_Irecv(yDownRecvBuffer, nx * nz * vars, MPI_DOUBLE, yDown, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
-			MPI_Isend(yDownSendBuffer, nx * nz * vars, MPI_DOUBLE, yDown, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
+		if( yFaceDown > -1 ) {
+			MPI_Irecv(yFaceDownRecvBuffer, nx * nz * vars, MPI_DOUBLE, yFaceDown, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend(yFaceDownSendBuffer, nx * nz * vars, MPI_DOUBLE, yFaceDown, 2000, MPI_COMM_WORLD, &requests[requestcount++]);
 		}
 
-		MPI_Waitall(requestcount, requests, status);
-		requestcount = 0;
-
-		if( zUp > -1 ) {
-			MPI_Irecv(zUpRecvBuffer, nx * ny * vars, MPI_DOUBLE, zUp, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
-			MPI_Isend(zUpSendBuffer, nx * ny * vars, MPI_DOUBLE, zUp, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
+		if( zFaceUp > -1 ) {
+			MPI_Irecv(zFaceUpRecvBuffer, nx * ny * vars, MPI_DOUBLE, zFaceUp, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend(zFaceUpSendBuffer, nx * ny * vars, MPI_DOUBLE, zFaceUp, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
 		}
 
-		if( zDown > -1 ) {
-			MPI_Irecv(zDownRecvBuffer, nx * ny * vars, MPI_DOUBLE, zDown, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
-			MPI_Isend(zDownSendBuffer, nx * ny * vars, MPI_DOUBLE, zDown, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
+		if( zFaceDown > -1 ) {
+			MPI_Irecv(zFaceDownRecvBuffer, nx * ny * vars, MPI_DOUBLE, zFaceDown, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend(zFaceDownSendBuffer, nx * ny * vars, MPI_DOUBLE, zFaceDown, 4000, MPI_COMM_WORLD, &requests[requestcount++]);
+		}
+
+		if( edgeA > -1 ) {
+			MPI_Irecv( edgeARecvBuffer, nz * vars, MPI_DOUBLE, edgeA, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend( edgeASendBuffer, nz * vars, MPI_DOUBLE, edgeA, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+		}
+
+		if( edgeB > -1 ) {
+			MPI_Irecv( edgeBRecvBuffer, nx * vars, MPI_DOUBLE, edgeB, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend( edgeBSendBuffer, nx * vars, MPI_DOUBLE, edgeB, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+		}
+
+		if( edgeC > -1 ) {
+			MPI_Irecv( edgeCRecvBuffer, nz * vars, MPI_DOUBLE, edgeC, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend( edgeCSendBuffer, nz * vars, MPI_DOUBLE, edgeC, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+		}
+
+		if( edgeD > -1 ) {
+			MPI_Irecv( edgeDRecvBuffer, nx * vars, MPI_DOUBLE, edgeD, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend( edgeDSendBuffer, nx * vars, MPI_DOUBLE, edgeD, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+		}
+
+		if( edgeE > -1 ) {
+			MPI_Irecv( edgeERecvBuffer, ny * vars, MPI_DOUBLE, edgeE, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend( edgeESendBuffer, ny * vars, MPI_DOUBLE, edgeE, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+		}
+
+		if( edgeF > -1 ) {
+			MPI_Irecv( edgeFRecvBuffer, ny * vars, MPI_DOUBLE, edgeF, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend( edgeFSendBuffer, ny * vars, MPI_DOUBLE, edgeF, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+		}
+
+		if( edgeG > -1 ) {
+			MPI_Irecv( edgeARecvBuffer, ny * vars, MPI_DOUBLE, edgeG, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend( edgeASendBuffer, ny * vars, MPI_DOUBLE, edgeG, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+		}
+
+		if( edgeH > -1 ) {
+			MPI_Irecv( edgeARecvBuffer, ny * vars, MPI_DOUBLE, edgeH, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend( edgeASendBuffer, ny * vars, MPI_DOUBLE, edgeH, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+		}
+
+		if( edgeI > -1 ) {
+			MPI_Irecv( edgeIRecvBuffer, nz * vars, MPI_DOUBLE, edgeI, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend( edgeISendBuffer, nz * vars, MPI_DOUBLE, edgeI, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+		}
+
+		if( edgeJ > -1 ) {
+			MPI_Irecv( edgeJRecvBuffer, nx * vars, MPI_DOUBLE, edgeJ, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend( edgeJSendBuffer, nx * vars, MPI_DOUBLE, edgeJ, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+		}
+
+		if( edgeK > -1 ) {
+			MPI_Irecv( edgeKRecvBuffer, nz * vars, MPI_DOUBLE, edgeK, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend( edgeKSendBuffer, nz * vars, MPI_DOUBLE, edgeK, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+		}
+
+		if( edgeL > -1 ) {
+			MPI_Irecv( edgeLRecvBuffer, nx * vars, MPI_DOUBLE, edgeL, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
+			MPI_Isend( edgeLSendBuffer, nx * vars, MPI_DOUBLE, edgeL, 8000, MPI_COMM_WORLD, &requests[requestcount++]);
 		}
 
 		MPI_Waitall(requestcount, requests, status);
@@ -316,12 +470,12 @@ int main(int argc, char* argv[]) {
 
 	MPI_Barrier(MPI_COMM_WORLD);
 
-	free(xUpRecvBuffer);
-	free(xDownRecvBuffer);
-	free(yUpRecvBuffer);
-	free(yDownRecvBuffer);
-	free(zUpRecvBuffer);
-	free(zDownRecvBuffer);
+	free(xFaceUpRecvBuffer);
+	free(xFaceDownRecvBuffer);
+	free(yFaceUpRecvBuffer);
+	free(yFaceDownRecvBuffer);
+	free(zFaceUpRecvBuffer);
+	free(zFaceDownRecvBuffer);
 
 	if( convert_position_to_rank(pex, pey, pez, pex/2, pey/2, pez/2) == me ) {
 		printf("# Results from rank: %d\n", me);
@@ -329,12 +483,12 @@ int main(int argc, char* argv[]) {
 		const double timeTaken = ( ((double) end.tv_sec) + ((double) end.tv_usec) * 1.0e-6 ) -
 			( ((double) start.tv_sec) + ((double) start.tv_usec) * 1.0e-6 );
 		const double bytesXchng =
-			((double)( xUp > -1 ? sizeof(double) * ny * nz * 2 * vars : 0 )) +
-			((double)( xDown > -1 ? sizeof(double) * ny * nz * 2 * vars : 0 )) +
-			((double)( yUp > -1 ? sizeof(double) * nx * nz * 2 * vars : 0 )) +
-			((double)( yDown > -1 ? sizeof(double) * nx * nz * 2 * vars : 0 )) +
-			((double)( zUp > -1 ? sizeof(double) * nx * ny * 2 * vars : 0 )) +
-			((double)( zDown > -1 ? sizeof(double) * nx * ny * 2 * vars : 0 ));
+			((double)( xFaceUp > -1 ? sizeof(double) * ny * nz * 2 * vars : 0 )) +
+			((double)( xFaceDown > -1 ? sizeof(double) * ny * nz * 2 * vars : 0 )) +
+			((double)( yFaceUp > -1 ? sizeof(double) * nx * nz * 2 * vars : 0 )) +
+			((double)( yFaceDown > -1 ? sizeof(double) * nx * nz * 2 * vars : 0 )) +
+			((double)( zFaceUp > -1 ? sizeof(double) * nx * ny * 2 * vars : 0 )) +
+			((double)( zFaceDown > -1 ? sizeof(double) * nx * ny * 2 * vars : 0 ));
 
 		printf("# %20s %20s %20s\n", "Time", "KBytesXchng/Rank-Max", "MB/S/Rank");
 		printf("  %20.6f %20.4f %20.4f\n",
