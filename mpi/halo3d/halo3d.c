@@ -14,8 +14,10 @@
 // distribution.
 
 #include <mpi.h>
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <sys/time.h>
 #include <string.h>
 
@@ -61,6 +63,8 @@ int main(int argc, char* argv[]) {
 
 	int repeats = 100;
 	int vars = 1;
+
+	long sleep = 1000;
 
 	for(int i = 1; i < argc; i++) {
 		if( strcmp(argv[i], "-nx") == 0 ) {
@@ -151,6 +155,17 @@ int main(int argc, char* argv[]) {
 
 			vars = atoi(argv[i+1]);
 			++i;
+		} else if( strcmp(argv[i], "-sleep") == 0 ) {
+                        if( i == argc ) {
+                                if(me == 0) {
+                                        fprintf(stderr, "Error: specified -sleep without a value.\n");
+                                }
+
+                                exit(-1);
+                        }
+
+                        sleep = atol(argv[i+1]);
+                        ++i;
 		} else {
 			if( 0 == me ) {
 				fprintf(stderr, "Unknown option: %s\n", argv[i]);
@@ -180,6 +195,7 @@ int main(int argc, char* argv[]) {
 		printf("# Data Grid (per rank):   %7d x %7d x %7d\n", nx, ny, nz);
 		printf("# Iterations:             %7d\n", repeats);
 		printf("# Variables:              %7d\n", vars);
+		printf("# Sleep:                  %7ld\n", sleep);
 	}
 
 	int posX, posY, posZ;
@@ -241,10 +257,20 @@ int main(int argc, char* argv[]) {
 	struct timeval start;
 	struct timeval end;
 
+	struct timespec sleepTS;
+	sleepTS.tv_sec = 0;
+	sleepTS.tv_nsec = sleep;
+
+	struct timespec remainTS;
+
 	gettimeofday( &start, NULL );
 
 	for(int i = 0; i < repeats; ++i) {
 		requestcount = 0;
+
+		if( nanosleep( &sleepTS, &remainTS ) == EINTR ) {
+			while( nanosleep( &remainTS, &remainTS ) == EINTR );
+		}
 
 		if( xUp > -1 ) {
 			MPI_Irecv(xUpRecvBuffer, ny * nz * vars, MPI_DOUBLE, xUp, 1000, MPI_COMM_WORLD, &requests[requestcount++]);
