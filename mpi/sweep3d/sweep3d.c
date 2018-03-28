@@ -5,10 +5,23 @@
 #include <sys/time.h>
 #include <string.h>
 #include <time.h>
+#include <errno.h>
 
 void get_position(const int rank, const int pex, const int pey, int* myX, int* myY) {
 	*myX = rank % pex;
         *myY = rank / pex;
+}
+
+void compute(long sleep) {
+	struct timespec sleepTS;
+        sleepTS.tv_sec = 0;
+        sleepTS.tv_nsec = sleep;
+
+        struct timespec remainTS;
+
+	if( nanosleep( &sleepTS, &remainTS ) == EINTR ) {
+        	while( nanosleep( &remainTS, &remainTS ) == EINTR );
+        }
 }
 
 int main(int argc, char* argv[]) {
@@ -129,6 +142,11 @@ int main(int argc, char* argv[]) {
 		ySendBuffer[i] = i;
 	}
 
+	struct timeval start;
+	struct timeval end;
+
+	gettimeofday( &start, NULL );
+
 	// We repeat this sequence twice because there are really 8 vertices in the 3D data domain and
 	// we sweep from each of them, processing the top four first and then the bottom four vertices
 	// next. 
@@ -143,7 +161,7 @@ int main(int argc, char* argv[]) {
 				MPI_Recv(yRecvBuffer, (ny * kba * vars), MPI_DOUBLE, yDown, 1000, MPI_COMM_WORLD, &status);
 			}
 
-			// compute
+			compute(sleep);
 
 			if( xUp > -1 ) {
 				MPI_Send(xSendBuffer, (nx * kba * vars), MPI_DOUBLE, xUp, 1000, MPI_COMM_WORLD);
@@ -164,7 +182,7 @@ int main(int argc, char* argv[]) {
 				MPI_Recv(yRecvBuffer, (ny * kba * vars), MPI_DOUBLE, yDown, 2000, MPI_COMM_WORLD, &status);
 			}
 
-			// compute
+			compute(sleep);
 
 			if( xDown > -1 ) {
 				MPI_Send(xSendBuffer, (nx * kba * vars), MPI_DOUBLE, xDown, 2000, MPI_COMM_WORLD);
@@ -185,7 +203,7 @@ int main(int argc, char* argv[]) {
 				MPI_Recv(yRecvBuffer, (ny * kba * vars), MPI_DOUBLE, yUp, 3000, MPI_COMM_WORLD, &status);
 			}
 
-			// compute
+			compute(sleep);
 
 			if( xDown > -1 ) {
 				MPI_Send(xSendBuffer, (nx * kba * vars), MPI_DOUBLE, xDown, 3000, MPI_COMM_WORLD);
@@ -206,7 +224,7 @@ int main(int argc, char* argv[]) {
 				MPI_Recv(yRecvBuffer, (ny * kba * vars), MPI_DOUBLE, yUp, 4000, MPI_COMM_WORLD, &status);
 			}
 
-			// compute
+			compute(sleep);
 
 			if( xUp > -1 ) {
 				MPI_Send(xSendBuffer, (nx * kba * vars), MPI_DOUBLE, xUp, 4000, MPI_COMM_WORLD);
@@ -218,6 +236,24 @@ int main(int argc, char* argv[]) {
 		}
 	}
 
+	MPI_Barrier(MPI_COMM_WORLD);
+	gettimeofday( &end, NULL );
+
+	const double timeTaken = ( ((double) end.tv_sec) + ((double) end.tv_usec) * 1.0e-6 ) -
+				( ((double) start.tv_sec) + ((double) start.tv_usec) * 1.0e-6 );
+	const double bytesXchng = ((double) repeats) * (
+		((double)( xUp > -1 ? sizeof(double) * nx * kba * vars * 2 : 0 )) +
+		((double)( xDown > -1 ? sizeof(double) * nx * kba * vars * 2 : 0 )) +
+		((double)( yUp > -1 ? sizeof(double) * ny * kba * vars * 2 : 0 )) +
+		((double)( yDown > -1 ? sizeof(double) * ny * kba * vars * 2 : 0 )) );
+
+	
+	if( (myX == (pex/2)) && (myY == (pey/2)) ) {
+		printf("# Results from rank: %d\n", me );
+		printf("# %20s %20s %20s\n", "Time", "KBytesXchng/Rank-Max", "MB/S/Rank");
+        	printf("  %20.6f %20.4f %20.4f\n",
+                        timeTaken, bytesXchng / 1024.0, (bytesXchng / 1024.0) / timeTaken );
+	}
 	MPI_Finalize();
 
 }
