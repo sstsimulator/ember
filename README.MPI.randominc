@@ -2,17 +2,20 @@ Communication Motif: randominc
 
 Description:
 
-Unstructured, irregular (for instance data analytics applications based on graphs with low/no-locality)
-applications typically have random, small message communications. In the
-randominc motif, we have developed a sparse, randomized communication pattern than first randomly
-selects a remote note and then randomly selects an address in the shared heap. The effect is to 
-create many small, random messages across the system (achieving roughly even distribution amongst
-ranks). Each message performs an atomic increment on the remote communication partner so that
+Unstructured, irregular (for instance data analytics applications based
+on graphs with low/no-locality) applications typically have random,
+small message communications. In the randominc motif, we have developed
+a sparse, randomized communication pattern than first randomly selects a
+remote note and then randomly selects an address in the shared heap. The
+effect is to create many small, random messages across the system
+(achieving roughly even distribution amongst ranks). Each message
+performs an atomic increment on the remote communication partner so that
 distribution can be assessed at the end of the benchmark run.
 
-A second use of the randominc benchmark can be to introduce randomized, small message
-background traffic to a machine/simulator for analysis. We used have such studies to examine
-the effect on high-performance network interconnects of small background loads which cause
-congestion in switches and moderate increases in latency.
+A second use of the randominc benchmark can be to introduce randomized,
+small message background traffic to a machine/simulator for analysis. We
+used have such studies to examine the effect on high-performance network
+interconnects of small background loads which cause congestion in
+switches and moderate increases in latency.
 
 
