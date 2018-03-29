@@ -1,0 +1,62 @@
+Communication Motif: Halo3D-26
+
+Description:
+
+Nearest neighbor communications are *very* common in scalable DOE
+applications. In this pattern, each MPI rank communications with ranks
+along each Cartesian face, as well as each edge of the local grid and
+each vertex. This creates a 26 communications per phase which range in
+size. Faces are usually larger messages (measured in kilobytes), edges
+are a 1-dimensional array of data (measured in 100s of bytes to
+kilobytes) and vertices are a single grid point which is typically tens
+of bytes (depending on the number of variables at each grid point). The
+"halo" pattern uses non-blocking MPI communications to place all 26
+messages into the send/receive queue at approximately the same time. A
+wait-all operations forces all communications to complete. In most DOE
+implementations (although not all) of Halo3D, an MPI_Allreduce operation
+is executed every n iterations (in some cases n=1) which executes either
+a sum, min or max over the global problem domain. This is *not* included
+in the Ember implementation so we have broad applicability.
+
+
+Parameters for the Halo3D Motif:
+
+mpirun ./halo3d-26 \
+	-nx <Local Domain Size in X-Dimension> \
+	-ny <Local Domain Size in Y-Dimension> \
+	-nz <Local Domain Size in Z-Dimension> \
+	-pex <Processors in X-Dimension> \
+	-pey <Processors in Y-Dimension> \
+	-pez <Processors in Z-Dimension>
+	-iterations <Number of Iterations to Execute, default is 1> \
+	-vars <Number of variables in each grid cell> \
+	-sleep <Number of nanoseconds to sleep/compute for>
+
+
+Example: 256 rank run with a local (per rank) data grid of 20x20x20
+
+mpirun -n 256 ./halo3d-26 \
+	-nx 20 \
+	-ny 20 \
+	-nz 20 \
+	-pex 8 \
+	-pey 8 \
+	-pez 4 \
+	-iterations 100 \
+	-vars 8 \
+	-sleep 2000
+
+Output:
+
+Example:
+
+#                 Time KBytesXchng/Rank-Max            MB/S/Rank
+              0.013865             150.0000           10818.6126
+
+When run the motif will complete reporting the time taken, the number of
+KB send/received by a rank in the middle of the processor grid (ranks
+around the edge will have lower communication volume because on some
+faces they have no neighbors). A benchmarked bandwidth is reported for
+the rank in the middle of the processor grid.
+
+
