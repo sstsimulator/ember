@@ -1,0 +1,20 @@
+Communication Motif: hotspotinc
+
+Description:
+
+Unstructured, irregular (for instance data analytics applications based
+on graphs with low/no-locality) applications typically have random,
+small message communications. However, for some applications, inputs or
+problem configurations, the more uniform nature of the random accesses
+can change to become more localized. In the hotspotinc motif, we have
+developed a sparse, randomized communication pattern that first randomly
+selects a remote communication partner (weighted towards a "hot spot"
+node) and then a random address on the remote side. Each message
+performs an atomic increment on the remote communication partner.
+
+A second use of the hotspotinc benchmark can be to introduce randomized,
+with hotspot, small messsage background traffic to a machine/simulator
+for analysis. Such patterns are representative of large collections of
+small jobs executing in a full machine (where network congestion and 
+runtime variance is experienced), or patterns of I/O metadata querying
+and small random access.
