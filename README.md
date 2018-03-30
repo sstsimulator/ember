@@ -27,6 +27,7 @@ Communication Patterns see:
 * README.MPI.halo3d (Structured nearest neighbor-like)
 * README.MPI.halo3d-26 (Unstructured nearest neighbor-like)
 * README.MPI.incast (Multiple inbound messages, I/O-like)
+* README.MPI.sweep3d (Communication sweeping)
 * README.SHMEM.randominc (Uniform random network access)
 * README.SHMEM.hotspotinc (Hotspot random network access)
 
