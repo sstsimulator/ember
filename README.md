@@ -11,7 +11,8 @@ often expensive and may be unavailable. To this end, the Ember suite
 provides communication patterns in a simplified setting (simplified by
 the removal of application calculations, control flow etc.). This
 enables more efficient traces to be captured, or in the cases of the
-Structural Simulation Toolkit (SST), these patterns can be easily
+Structural Simulation Toolkit (SST, http://sst-simulator.org),
+these patterns can be easily
 replicated without tracing using the Ember/SST motif library. The
 intention of Ember is to enable much larger-scale modeling of
 high-performance interconnects to achieve DOE's goal of scalable
