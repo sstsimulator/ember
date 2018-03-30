@@ -22,6 +22,14 @@ collectively, our experience working with leading industry vendors has
 been that the motifs capture pertinent aspects of the network
 interconnect.
 
+Communication Patterns see:
+
+* README.MPI.halo3d (Structured nearest neighbor-like)
+* README.MPI.halo3d-26 (Unstructured nearest neighbor-like)
+* README.MPI.incast (Multiple inbound messages, I/O-like)
+* README.SHMEM.randominc (Uniform random network access)
+* README.SHMEM.hotspotinc (Hotspot random network access)
+
 The Ember Communication Pattern Library is developed by the Scalable
 Computer Architectures group at Sandia National Laboratories, NM.
 Funding for the development is provided by the DOE NNSA/ASC Computing
