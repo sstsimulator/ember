@@ -1,4 +1,4 @@
-# Ember Parallel Process Communication Pattern Library
+# Ember Communication Pattern Library
 
 Multi-node communication patterns underpin the scalability and parallel
 performance of the Department of Energy, and broader HPC workloads.
