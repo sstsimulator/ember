@@ -23,7 +23,7 @@ collectively, our experience working with leading industry vendors has
 been that the motifs capture pertinent aspects of the network
 interconnect.
 
-Communication Patterns see:
+Communication Patterns information:
 
 * README.MPI.halo3d (Structured nearest neighbor-like)
 * README.MPI.halo3d-26 (Unstructured nearest neighbor-like)
