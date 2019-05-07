@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
     } else if (strcmp("-vars", argv[i]) == 0) {
       vars = atoi(argv[i + 1]);
       i++;
-    } else if (strcmp("-kba", argv[i + 1]) == 0) {
+    } else if (strcmp("-kba", argv[i]) == 0) {
       kba = atoi(argv[i + 1]);
       i++;
     }
