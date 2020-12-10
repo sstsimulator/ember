@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
       }
 
       if (yUp > -1) {
-        MPI_Send(ySendBuffer, (nx * kba * vars), MPI_DOUBLE, yUp, 1000,
+        MPI_Send(ySendBuffer, (ny * kba * vars), MPI_DOUBLE, yUp, 1000,
                  MPI_COMM_WORLD);
       }
     }
@@ -217,7 +217,7 @@ int main(int argc, char* argv[]) {
       }
 
       if (yUp > -1) {
-        MPI_Send(ySendBuffer, (nx * kba * vars), MPI_DOUBLE, yUp, 2000,
+        MPI_Send(ySendBuffer, (ny * kba * vars), MPI_DOUBLE, yUp, 2000,
                  MPI_COMM_WORLD);
       }
     }
@@ -242,7 +242,7 @@ int main(int argc, char* argv[]) {
       }
 
       if (yDown > -1) {
-        MPI_Send(ySendBuffer, (nx * kba * vars), MPI_DOUBLE, yDown, 3000,
+        MPI_Send(ySendBuffer, (ny * kba * vars), MPI_DOUBLE, yDown, 3000,
                  MPI_COMM_WORLD);
       }
     }
@@ -267,7 +267,7 @@ int main(int argc, char* argv[]) {
       }
 
       if (yDown > -1) {
-        MPI_Send(ySendBuffer, (nx * kba * vars), MPI_DOUBLE, yDown, 4000,
+        MPI_Send(ySendBuffer, (ny * kba * vars), MPI_DOUBLE, yDown, 4000,
                  MPI_COMM_WORLD);
       }
     }
