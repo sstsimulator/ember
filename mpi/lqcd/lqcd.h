@@ -5,6 +5,13 @@
 #ifndef LQCD_LQCD_H
 #define LQCD_LQCD_H
 
+#include <errno.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/time.h>
+#include <time.h>
+
 #define EVEN 0x02
 #define ODD 0x01
 #define EVENANDODD 0x03
@@ -38,5 +45,22 @@
 #define DIR3(dir) ((dir)+8)
 #define FORALL3UPDIR(dir) for(dir=X3UP; dir<=T3UP; dir++)
 
+typedef struct __my_stats {
+    int nx;
+    int ny;
+    int nz;
+    int nt;
+    int sizeof_su3matrix;
+    int sizeof_su3vector;
+    int nscompute;
+    uint64_t pe_flops;
+    uint64_t total_sites;
+    uint64_t flops_per_iter;
+    uint64_t flops_resid ;
+    uint64_t flops_mmvs4d;
+    double compute_nseconds_resid;
+    double compute_nseconds_mmvs4d;
+
+} lqParam;
 
 #endif //LQCD_LQCD_H
