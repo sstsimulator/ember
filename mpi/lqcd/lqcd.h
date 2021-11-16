@@ -50,14 +50,20 @@ typedef struct __my_stats {
     int ny;
     int nz;
     int nt;
+    int even_sites_on_node;
+    int odd_sites_on_node;
+
     int sizeof_su3matrix;
     int sizeof_su3vector;
     int nscompute;
+    int iterations;
+    int compt;
     uint64_t pe_flops;
     uint64_t total_sites;
     uint64_t flops_per_iter;
     uint64_t flops_resid ;
     uint64_t flops_mmvs4d;
+    double compute_nseconds;
     double compute_nseconds_resid;
     double compute_nseconds_mmvs4d;
 
