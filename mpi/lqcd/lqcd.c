@@ -81,18 +81,16 @@ int lqcd_lex_rank(const int coords[], int dim, int size[], int *nsquares)
     size_t rank = coords[dim-1];
     fprintf(stderr,"rank %d\n",rank);
     if (x == -1 || y == -1 || z == -1 || t == -1){
-        fprintf(stderr,"-1 coordinate\n");
+
         return(-1);
     }
     if (x >= nsquares[XUP] || y >= nsquares[YUP] || z >= nsquares[ZUP] || t >= nsquares[TUP]){
-        fprintf(stderr,"x %d %d, y %d %D, z %d %d, t %d %d \n",x,nsquares[XUP],y,nsquares[YUP],z, nsquares[ZUP],t,nsquares[TUP] );
         return(-1);
     }
 
     for(d = dim-2; d >= 0; d--){
         rank = rank * size[d] + coords[d];
     }
-    fprintf(stderr,"return value %d\n",rank);
     return rank;
 }
 
@@ -184,16 +182,12 @@ void lqcd_configure( lqParam *param, int num_nodes, int my_rank, int iterations,
     //positive direction
     for (int d = XUP; d <= TUP; d++){
         lqcd_neighbor_coords(machine_coordinates, tmp_coords, d, 1);
-        for (int j = 0; j < 4; j++ ) { fprintf(stderr,"myrank %d tmp_coords[%d] %d %d\n",my_rank,j,tmp_coords[j],nsquares[j]); }
         n_ranks[d] = lqcd_lex_rank(tmp_coords, 4, nsquares, nsquares);
-        fprintf(stderr,"myrank %d: d %d, n_ranks %d\n",my_rank,d,n_ranks[d]);
     }
     //negative direction
     for (int d = XUP; d <= TUP; d++){
         lqcd_neighbor_coords(machine_coordinates, tmp_coords, d, -1);
-        for (int j = 0; j < 4; j++ ) { fprintf(stderr,"myrank %d tmp_coords[%d] %d %d\n",my_rank,j,tmp_coords[j],nsquares[j]); }
         n_ranks[OPP_DIR(d)] = lqcd_lex_rank(tmp_coords, 4, nsquares, nsquares);
-        fprintf(stderr,"myrank %d: d %d, opp_dir(%d) %d n_ranks %d\n",my_rank,d,d,OPP_DIR(d),n_ranks[OPP_DIR(d)]);
     }
 #if 0
     verbose(CALL_INFO, 1, 0, "Rank: %" PRIu32 ", World=%" PRId32 ", X=%" PRId32 ", Y=%" PRId32 ", Z=%" PRId32 ", T=%" PRId32 ", Px=%" PRId32 ", Py=%" PRId32 ", Pz=%" PRId32 ", Pt=%" PRId32 "\n",
@@ -327,16 +321,15 @@ int main(int argc, char* argv[]) {
     int squaresize[8];
     int nsquares[8];
     int n_ranks[8];
-    double *UpRecvBuffer[8];
-    double *UpSendBuffer[8];
+    double *UpRecvBuffer1[8];
+    double *UpSendBuffer1[8];
     double *UpRecvBuffer2[8];
     double *UpSendBuffer2[8];
-    double *DownRecvBuffer[8];
-    double *DownSendBuffer[8];
+    double *DownRecvBuffer1[8];
+    double *DownSendBuffer1[8];
     double *DownRecvBuffer2[8];
     double *DownSendBuffer2[8];
-    double *DownRecvBuffer3[8];
-    double *DownSendBuffer3[8];
+
     lqParam param;
 
     MPI_Init(&argc, &argv);
@@ -479,20 +472,16 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < 8; ++i )
     {
         int bufsize = lqcd_get_transfer_size(i, squaresize)*param.sizeof_su3vector;
-        if( me == 0 || me == 1 )
-        {
-           fprintf(stderr,"rank %d buffseize %d: %d\n",me, i,bufsize);
-        }
-        UpRecvBuffer[i]   = (double *)malloc(sizeof(double)*bufsize);
-        UpSendBuffer[i]   = (double *)malloc(sizeof(double)*bufsize);
+
+        UpRecvBuffer1[i]   = (double *)malloc(sizeof(double)*bufsize);
+        UpSendBuffer1[i]   = (double *)malloc(sizeof(double)*bufsize);
         UpRecvBuffer2[i]   = (double *)malloc(sizeof(double)*bufsize);
         UpSendBuffer2[i]   = (double *)malloc(sizeof(double)*bufsize);
-        DownRecvBuffer[i] =  (double *)malloc(sizeof(double)*bufsize);
-        DownSendBuffer[i] =  (double *)malloc(sizeof(double)*bufsize);
+        DownRecvBuffer1[i] =  (double *)malloc(sizeof(double)*bufsize);
+        DownSendBuffer1[i] =  (double *)malloc(sizeof(double)*bufsize);
         DownRecvBuffer2[i] =  (double *)malloc(sizeof(double)*bufsize);
         DownSendBuffer2[i] =  (double *)malloc(sizeof(double)*bufsize);
-        DownRecvBuffer3[i] =  (double *)malloc(sizeof(double)*bufsize);
-        DownSendBuffer3[i] =  (double *)malloc(sizeof(double)*bufsize);
+
     }
 
     for (int its = 0; its < param.iterations; ++its) {
@@ -504,10 +493,10 @@ int main(int argc, char* argv[]) {
             // We don't need to gather the first site twice (hence lqcd_get_transfer_size(d)*2)
 
             for (int d = XUP; d <= TUP; d++) {
-               // if (me == 1 ) fprintf(stderr,"Rank 1 n_rank[%d]=%d\n",d,n_ranks[d]);
                 if (n_ranks[d] != -1) {
                     // pos_requests.push_back(req);
                     int transsz = lqcd_get_transfer_size(d, squaresize) / even_odd;
+#if 0
                     if ( me == 0 || n_ranks[d] == 0 ) {
 #if 0
                         verbose(CALL_INFO, 2, 0, "Rank: %"
@@ -519,14 +508,12 @@ int main(int argc, char* argv[]) {
                         fprintf(stderr, "(Step 0) Rank %d receiving pos elements %d from %d TAG 0\n", me, transsz,n_ranks[d]);
 #endif
                     }
-
-                    MPI_Irecv(UpRecvBuffer[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 0, MPI_COMM_WORLD,
+#endif
+                    MPI_Irecv(UpRecvBuffer1[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 0, MPI_COMM_WORLD,
                               &posRequests[pos_requestcount++]);  // GroupWorld
                 }
             }
-            if (me == 0) {
-                fprintf(stderr,"Phase 0.5 even/odd %d  %d %d\n", parity,pos_requestcount,neg_requestcount);
-            }
+
 
 
             for (int d = XUP; d <= TUP; d++) {
@@ -535,6 +522,7 @@ int main(int argc, char* argv[]) {
 
                 if (n_ranks[d] != -1) {
                     transsz = lqcd_get_transfer_size(d, squaresize) / even_odd;
+#if 0
                     if (me == 0 || n_ranks[d] == 0) {
 #if 0
                         verbose(CALL_INFO, 2, 0, "Rank: %"
@@ -545,21 +533,21 @@ int main(int argc, char* argv[]) {
 #endif
                         fprintf(stderr, "(step 0) Rank %d sending pos elements %d to %d TAG 2\n", me, transsz, n_ranks[d]);
                     }
-                    MPI_Send(UpSendBuffer[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 2, MPI_COMM_WORLD);
+#endif
+                    MPI_Send(UpSendBuffer1[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 2, MPI_COMM_WORLD);
                 }
             }
 
-            if (me == 0) {
-                fprintf(stderr,"Phase 1 even/odd %d  %d %d\n", parity,pos_requestcount,neg_requestcount);
-            }
 
 
             for (int d = XUP; d <= TUP; d++) {
                 if (n_ranks[d] != -1) {
                     int transsz = lqcd_get_transfer_size(d, squaresize) * 2 / even_odd;
+#if 0
                     if (me == 0 || n_ranks[d] == 0) {
                         fprintf(stderr, "Rank %d receiving pos elements: %d from %d TAG 1\n", me, transsz,n_ranks[d]);
                     }
+#endif
                     //    verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 "receiving pos (Naik) elements: %" PRIu32 "\n", rank(), transsz);
                     MPI_Irecv(UpRecvBuffer2[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 1, MPI_COMM_WORLD,
                               &posRequests[pos_requestcount++]);  // GroupWorld
@@ -569,9 +557,11 @@ int main(int argc, char* argv[]) {
             for (int d = XUP; d <= TUP; d++) {
                 if (n_ranks[d] != -1) {
                     int transsz = lqcd_get_transfer_size(d, squaresize) * 2 / even_odd;
+#if 0
                     if (me == 0 || n_ranks[d] == 0) {
                         fprintf(stderr, "Rank %d sending pos elements: %d to %d TAG 3\n", me, transsz,n_ranks[d]);
                     }
+#endif
                     //    verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 "sending pos (Naik) elements: %" PRIu32 "\n", rank(), transsz);
                     MPI_Send(UpSendBuffer2[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 3, MPI_COMM_WORLD);
                 }
@@ -586,28 +576,28 @@ int main(int argc, char* argv[]) {
                     //MessageRequest*  req  = new MessageRequest();
                     // neg_requests.push_back(req);
                     int transsz = lqcd_get_transfer_size(d, squaresize) / even_odd;
+#if 0
                     if (me == 0 || n_ranks[d] == 0) {
                         fprintf(stderr, "Rank: %d receiving neg elements: %d from %d TAG 2\n", me, transsz,n_ranks[d]);
                     }
+#endif
                     //    verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 "receiving neg elements: %" PRIu32 "\n", rank(), transsz);
-                    MPI_Irecv(DownRecvBuffer2[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 2,
+                    MPI_Irecv(DownRecvBuffer1[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 2,
                               MPI_COMM_WORLD, &negRequests[neg_requestcount++]);  // GroupWorld
                 }
             }
             for (int d = TDOWN; d <= XDOWN; d++) {
                 if (n_ranks[d] != -1) {
                     int transsz = lqcd_get_transfer_size(d, squaresize) / even_odd;
+#if 0
                     if (me == 0 || n_ranks[d] == 0) {
                         fprintf(stderr, "Rank: %d sending neg elements: %d to %d TAG 0\n", me, transsz,n_ranks[d]);
                     }
+#endif
                     //    verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 "sending neg elements: %" PRIu32 "\n", rank(), transsz);
-                    MPI_Send(DownSendBuffer2[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 0,
+                    MPI_Send(DownSendBuffer1[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 0,
                              MPI_COMM_WORLD);
                 }
-            }
-
-            if (me == 0) {
-                fprintf(stderr,"Phase 3 even/odd %d  %d %d\n", parity,pos_requestcount,neg_requestcount);
             }
 
             // Time-wise 3-step gather (4 total)
@@ -616,13 +606,15 @@ int main(int argc, char* argv[]) {
                     // MessageRequest*  req  = new MessageRequest();
                     // neg_requests.push_back(req);
                     transsz = lqcd_get_transfer_size(d, squaresize) * 2 / even_odd;
+#if 0
                     if (me == 0 || n_ranks[d] == 0) {
                         fprintf(stderr, "Rank: %d receiving neg elements: %d to %d TAG 3\n", me, transsz,n_ranks[d]);
                     }
+#endif
                     //    verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 "receiving neg (Naik) elements: %" PRIu32 "\n", rank(), transsz);
                     // enQ_irecv( evQ, n_ranks[d],
                     //           sizeof_su3vector * transsz, 0, GroupWorld, req);
-                    MPI_Irecv(DownRecvBuffer3[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 3,
+                    MPI_Irecv(DownRecvBuffer2[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 3,
                               MPI_COMM_WORLD,
                               &negRequests[neg_requestcount++]);  // GroupWorld
                 }
@@ -631,24 +623,23 @@ int main(int argc, char* argv[]) {
             for (int d = TDOWN; d <= XDOWN; d++) {
                 if (n_ranks[d] != -1) {
                     transsz = lqcd_get_transfer_size(d, squaresize) * 2 / even_odd;
+#if 0
                     if (me == 0 || n_ranks[d] == 0) {
                         fprintf(stderr, "Rank: %d sending neg elements: %d from %d TAG 1\n", me, transsz,n_ranks[d]);
                     }
+#endif
                     //    verbose(CALL_INFO, 2, 0, "Rank: %" PRIu32 "sending neg (Naik) elements: %" PRIu32 "\n", rank(), transsz);
-                    MPI_Send(DownSendBuffer3[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 1,
+                    MPI_Send(DownSendBuffer2[d], param.sizeof_su3vector * transsz, MPI_DOUBLE, n_ranks[d], 1,
                              MPI_COMM_WORLD);
                 }
             }
 
-            if (me == 0) {
-                printf("Phase 4 even/odd %d  %d %d\n", parity,pos_requestcount,neg_requestcount);
-            }
 
             // Wait on positive gathers (8 total)
-            if (me == 0) {
-                fprintf(stderr, "Rank: %d Postive Messages to wait on: %d\n", me, pos_requestcount);
+            // if (me == 0) {
+             //   fprintf(stderr, "Rank: %d Postive Messages to wait on: %d\n", me, pos_requestcount);
                 // verbose(CALL_INFO, 1, 0, "Rank: %" PRIu32 ", +Messages to wait on: %zu\n", rank(), pos_requests.size());
-            }
+           // }
 
 
             MPI_Waitall(pos_requestcount, posRequests, status_list);
@@ -687,7 +678,7 @@ int main(int argc, char* argv[]) {
             //output("Iteration on rank %" PRId32 " completed generation, %d events in queue\n",
             //    rank(), (int)evQ.size());
           //  if (me == 1) {
-                fprintf(stderr,"rank %d End of its even/odd %d  %d %d\n",me, parity,pos_requestcount,neg_requestcount);
+         //       fprintf(stderr,"rank %d End of its even/odd %d  %d %d\n",me, parity,pos_requestcount,neg_requestcount);
           //  }
 
 
@@ -727,20 +718,15 @@ int main(int argc, char* argv[]) {
     for (int i = 0; i < 8; ++i )
     {
         int bufsize = lqcd_get_transfer_size(i, squaresize);
-        if( me == 0 )
-        {
-            printf("buffseize %d: %d\n",i,bufsize);
-        }
-        free(UpRecvBuffer[i]);
-        free(UpSendBuffer[i]);
+        free(UpRecvBuffer1[i]);
+        free(UpSendBuffer1[i]);
         free(UpRecvBuffer2[i]);
         free(UpSendBuffer2[i]);
-        free(DownRecvBuffer[i]);
-        free(DownSendBuffer[i]);
+        free(DownRecvBuffer1[i]);
+        free(DownSendBuffer1[i]);
         free(DownRecvBuffer2[i]);
         free(DownSendBuffer2[i]);
-        free(DownRecvBuffer3[i]);
-        free(DownSendBuffer3[i]);
+
     }
     free(posRequests);
     free(negRequests);
