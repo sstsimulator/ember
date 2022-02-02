@@ -90,7 +90,7 @@ int lqcd_lex_rank(const int coords[], int dim, int size[], int *nsquares)
     int z = coords[ZUP];
     int t = coords[TUP];
     size_t rank = coords[dim-1];
-    fprintf(stderr,"rank %zu\n",rank);
+    //fprintf(stderr,"rank %zu\n",rank);
     if (x == -1 || y == -1 || z == -1 || t == -1){
 
         return(-1);
@@ -351,7 +351,9 @@ int main(int argc, char* argv[]) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &me);
     MPI_Comm_size(MPI_COMM_WORLD, &num_nodes);
-
+    if (me == 0) {
+        printf("Number of nodes %d\n",num_nodes);
+    }
     if (me == 0) {
         for (int i = 1; i < argc; i++) {
             if (strcmp(argv[i], "-nx") == 0) {
@@ -467,6 +469,7 @@ int main(int argc, char* argv[]) {
         printf("Mesh Size (X): %d, (Y): %d (Z)  %d, (T), %d\n", nx, ny, nz, nt);
         printf("# of Iterations: %d\n", iterations);
         printf("Flops at PE %llu\n", peflops);
+        printf("Total # of ranks %d\n", num_nodes);
         printf("===========================================\n");
     }
     // Create MPI Request instances.
