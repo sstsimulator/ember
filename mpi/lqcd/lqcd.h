@@ -58,14 +58,15 @@ typedef struct __my_stats {
     int nscompute;
     int iterations;
     int compt;
-    uint64_t pe_flops;
-    uint64_t total_sites;
-    uint64_t flops_per_iter;
-    uint64_t flops_resid ;
-    uint64_t flops_mmvs4d;
-    double compute_nseconds;
-    double compute_nseconds_resid;
-    double compute_nseconds_mmvs4d;
+    long pe_flops;
+    long total_sites;
+    long flops_per_iter;
+    long flops_resid ;
+    long flops_mmvs4d;
+    long compute_nseconds;
+    long compute_nseconds_resid;
+    long compute_nseconds_mmvs4d;
+
 
 } lqParam;
 

@@ -90,7 +90,7 @@ int lqcd_lex_rank(const int coords[], int dim, int size[], int *nsquares)
     int z = coords[ZUP];
     int t = coords[TUP];
     size_t rank = coords[dim-1];
-    fprintf(stderr,"rank %d\n",rank);
+    fprintf(stderr,"rank %zu\n",rank);
     if (x == -1 || y == -1 || z == -1 || t == -1){
 
         return(-1);
@@ -233,6 +233,8 @@ void lqcd_initialize( lqParam *param, int num_nodes, int my_rank, int iterations
 
     // With data compression, a Xeon Phi (KNL) could get 300 GF/s
     // see "Staggered Dslash Performance on Intel Xeon Phi Architecture"
+    // Is it memory intensive operation?  If so, the modern architecture is 100-200GB/sec
+    // It's translated to 20-30 Gflops
     param->pe_flops = (uint64_t) 20ULL* 1000*1000*1000; // Subject to change
 
     param->total_sites = (uint64_t) (param->nx*param->ny*param->nz*param->nt);
@@ -245,7 +247,7 @@ void lqcd_initialize( lqParam *param, int num_nodes, int my_rank, int iterations
 
     //const uint64_t flops_per_iter = sites_on_node*(11*15 + 1205)/2;
     param->flops_per_iter = 0;
-
+    long flops_per_iter=0;
     // From the portion of code we are looking at there is 157(sites_on_node)/2 for the resid calc
     // (12*num_offsets+12 +12 +1) * V/2
     param->flops_resid = sites_on_node*157/2;
@@ -266,21 +268,23 @@ void lqcd_initialize( lqParam *param, int num_nodes, int my_rank, int iterations
     // This motif represents a starting point, given our profiled systems.
 
     // Converts FLOP/s into nano seconds of compute
-    double compute_nseconds_resid = ( (double)param->flops_resid / ( (double) param->pe_flops / 1000000000.0 ) );
-    double compute_nseconds_mmvs4d = ( (double)param->flops_mmvs4d / ( (double)param->pe_flops / 1000000000.0 ) );
-    int nsCompute;
+    param->compute_nseconds_resid = ( (double)param->flops_resid / ( (double) param->pe_flops / 1000000000.0 ) );
+    param->compute_nseconds_mmvs4d = ( (double)param->flops_mmvs4d / ( (double)param->pe_flops / 1000000000.0 ) );
+    long nsCompute;
     if(param->flops_per_iter){
         param->compute_nseconds = ( (double) param->flops_per_iter / ( (double)param->pe_flops / 1000000000.0 ) );
         //int nsCompute  = (uint64_t) params.find("arg.computetime", (uint64_t) compute_nseconds);
         nsCompute = 1;
         if( my_rank == 0)
-            printf("LQCD nsCompute set:%d ns\n", nsCompute);
+            printf("LQCD nsCompute set:%ld ns\n", nsCompute);
     }
     else{
         nsCompute = 0;
         if ( my_rank == 0){
-            printf("LQCD compute time resid: %e  mmvs4d %e ns\n", param->compute_nseconds_resid, param->compute_nseconds_mmvs4d);
+            printf("LQCD compute time resid: %ld  mmvs4d %ld ns\n", param->compute_nseconds_resid, param->compute_nseconds_mmvs4d);
         }
+        flops_per_iter = sites_on_node*(11*15 + 1205)/2;
+        param->compute_nseconds = (long)( (double)flops_per_iter/ ( (double)param->pe_flops / (double) 1000000000.0 ) );
     }
 
 
@@ -340,6 +344,7 @@ int main(int argc, char* argv[]) {
     double *DownSendBuffer1[8];
     double *DownRecvBuffer2[8];
     double *DownSendBuffer2[8];
+    struct timespec tim;
 
     lqParam param;
 
@@ -654,8 +659,6 @@ int main(int argc, char* argv[]) {
              //   fprintf(stderr, "Rank: %d Postive Messages to wait on: %d\n", me, pos_requestcount);
                 // verbose(CALL_INFO, 1, 0, "Rank: %" PRIu32 ", +Messages to wait on: %zu\n", rank(), pos_requests.size());
            // }
-
-
             MPI_Waitall(pos_requestcount, posRequests, status_list);
             pos_requestcount = 0;
             // Compute Matrix Vector Multiply Sum in 4 directions
@@ -669,6 +672,10 @@ int main(int argc, char* argv[]) {
             else enQ_compute(evQ, compute_nseconds_mmvs4d);
             comp_time += Simulation::getSimulation()->getCurrentSimCycle() - comp_start;
             //output("Rank %" PRIu32 ", Compute end: %" PRIu64 "\n", rank(), Simulation::getSimulation()->getCurrentSimCycle());
+#else
+            tim.tv_sec  = 0;
+            tim.tv_nsec =  param.compute_nseconds;
+            nanosleep(&tim,NULL);
 #endif
             //Wait on negative gathers (8 total)
 #ifdef _EMBER_DEBUG
@@ -686,10 +693,15 @@ int main(int argc, char* argv[]) {
             // Compute Matrix Vector Multiply Sum in 4 directions
             // C <- A[0]*B[0]+A[1]*B[1]+A[2]*B[2]+A[3]*B[3]
             // This is done for both negative "fat" and "long" links
-
+            tim.tv_nsec =  param.compute_nseconds;
+            nanosleep(&tim,NULL);
 #if 0
             if (nsCompute) enQ_compute(evQ, nsCompute);
             else enQ_compute(evQ, compute_nseconds_mmvs4d);
+#else
+            tim.tv_sec  = 0;
+            tim.tv_nsec =  param.compute_nseconds;
+            nanosleep(&tim,NULL);
 #endif
             //output("Iteration on rank %" PRId32 " completed generation, %d events in queue\n",
             //    rank(), (int)evQ.size());
@@ -725,6 +737,9 @@ int main(int argc, char* argv[]) {
             //enQ_compute(evQ, compute_nseconds_resid);
             // sleep();
         }
+        tim.tv_sec  = 0;
+        tim.tv_nsec =  param.compute_nseconds_resid;
+        nanosleep( &tim, NULL);
 
         // Allreduce MPI_DOUBLE
         // coll_start = Simulation::getSimulation()->getCurrentSimCycle();
