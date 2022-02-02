@@ -14,10 +14,21 @@
 // distribution.
 
 #include "lqcd.h"
+#ifdef WITH_SSTMAC
+#include <sstmac/replacements/mpi/mpi.h>
+#include <sstmac/replacements/sys/time.h>
+#include <sstmac/replacements/time.h>
+#else
 #include <mpi.h>
+#endif
+
+#include <errno.h>
+#include <stdio.h>
+#include <string.h>
+#include <time.h>
 
 void lqcd_setup_hyper_prime(lqParam *param, int my_rank, int num_nodes, int *squaresize, int *nsquares  ){
-    int prime[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53};
+    int prime[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97, 101};
     int dir, i, j, k;
     int len_primes = sizeof(prime)/sizeof(int);
     /* Figure out dimensions of rectangle */
@@ -299,10 +310,10 @@ void lqcd_initialize( lqParam *param, int num_nodes, int my_rank, int iterations
 int main(int argc, char* argv[]) {
     int me = -1;
     int num_nodes = -1;
-    int nx = 16;
-    int ny = 16;
-    int nz = 16;
-    int nt = 16;
+    int nx = 64;
+    int ny = 64;
+    int nz = 64;
+    int nt = 64;
     int iterations = 100;
     int vars = 1;
     long sleep = 1000;
@@ -586,6 +597,9 @@ int main(int argc, char* argv[]) {
                               MPI_COMM_WORLD, &negRequests[neg_requestcount++]);  // GroupWorld
                 }
             }
+
+
+
             for (int d = TDOWN; d <= XDOWN; d++) {
                 if (n_ranks[d] != -1) {
                     int transsz = lqcd_get_transfer_size(d, squaresize) / even_odd;
@@ -657,6 +671,7 @@ int main(int argc, char* argv[]) {
             //output("Rank %" PRIu32 ", Compute end: %" PRIu64 "\n", rank(), Simulation::getSimulation()->getCurrentSimCycle());
 #endif
             //Wait on negative gathers (8 total)
+#ifdef _EMBER_DEBUG
             if (me == 0) {
 #if 0
                 verbose(CALL_INFO, 1, 0, "Rank: %" PRIu32
@@ -664,6 +679,7 @@ int main(int argc, char* argv[]) {
 #endif
                 fprintf(stderr, "Rank %d: Negative Messages to wait on %d\n", me, neg_requestcount);
             }
+#endif
             // if( neg_requestcount > 0 )
             MPI_Waitall(neg_requestcount, negRequests, status_list);
             neg_requestcount = 0;
@@ -684,9 +700,11 @@ int main(int argc, char* argv[]) {
 
         } // END even-odd preconditioning loop
 
+#ifdef _EMBER_DEBUG
         if (me == 0) {
             fprintf(stderr, "Rank %d: Calling Allreduce\n", me);
         }
+#endif
         // Allreduce MPI_DOUBLE
         // coll_start = Simulation::getSimulation()->getCurrentSimCycle();
         double colldata_in = 1.0;
@@ -715,9 +733,9 @@ int main(int argc, char* argv[]) {
         //coll_time += Simulation::getSimulation()->getCurrentSimCycle() - coll_start;
         //output("Rank %" PRIu32 ", Collective end: %" PRIu64 "\n", rank(), Simulation::getSimulation()->getCurrentSimCycle());
     }
+
     for (int i = 0; i < 8; ++i )
     {
-        int bufsize = lqcd_get_transfer_size(i, squaresize);
         free(UpRecvBuffer1[i]);
         free(UpSendBuffer1[i]);
         free(UpRecvBuffer2[i]);
@@ -728,6 +746,7 @@ int main(int argc, char* argv[]) {
         free(DownSendBuffer2[i]);
 
     }
+
     free(posRequests);
     free(negRequests);
     free(status_list);
