@@ -146,7 +146,7 @@ int lqcd_node_number(lqParam  *param, int *squaresize, int *nsquares ) {
 /* Convert rank to machine coordinates */
 void lqcd_lex_coords(int coords[], const int dim, const int size[], const int myrank){
     int d;
-    uint32_t r = myrank;
+    u_int32_t r = myrank;
 
     for(d = 0; d < dim; d++){
         coords[d] = r % size[d];
@@ -179,8 +179,8 @@ void lqcd_configure( lqParam *param, int num_nodes, int my_rank, int iterations,
 
     if( my_rank == 0 ) {
         printf("LQCD problem size: x %d, y %d, z %d, t %d\n", param->nx, param->ny, param->nz,param-> nt);
-        printf("LQCD gather num_elements (1st and Naik): %llu,  %llu\n", (uint64_t) param->nx*
-        (uint64_t) param->ny*(uint64_t )param->nz*9, (uint64_t) param->nx*(uint64_t )param->ny*(uint64_t )param->nz*27);
+        printf("LQCD gather num_elements (1st and Naik): %llu,  %llu\n", (u_int64_t) param->nx*
+        (u_int64_t) param->ny*(u_int64_t )param->nz*9, (u_int64_t) param->nx*(u_int64_t )param->ny*(u_int64_t )param->nz*27);
 
         // if (nsCompute != 0) printf("LQCD compute time per segment: %d ns\n", nsCompute);
         // else printf("LQCD compute time resid: %d mmvs4d: %d ns\n", compute_nseconds_resid, compute_nseconds_mmvs4d);
@@ -235,9 +235,9 @@ void lqcd_initialize( lqParam *param, int num_nodes, int my_rank, int iterations
     // see "Staggered Dslash Performance on Intel Xeon Phi Architecture"
     // Is it memory intensive operation?  If so, the modern architecture is 100-200GB/sec
     // It's translated to 20-30 Gflops
-    param->pe_flops = (uint64_t) 20ULL* 1000*1000*1000; // Subject to change
+    param->pe_flops = (u_int64_t) 20ULL* 1000*1000*1000; // Subject to change
 
-    param->total_sites = (uint64_t) (param->nx*param->ny*param->nz*param->nt);
+    param->total_sites = (u_int64_t) (param->nx*param->ny*param->nz*param->nt);
 
     // The MILC code for CG gave this calculation sites_on_node*(offset*15+1205)
     // Offset is also referred to as "number of masses" with referenced values being 9 or 11.
@@ -245,7 +245,7 @@ void lqcd_initialize( lqParam *param, int num_nodes, int my_rank, int iterations
     // The equation below accounts only for "useful" flops.
     // Turn this into an optional argument
 
-    //const uint64_t flops_per_iter = sites_on_node*(11*15 + 1205)/2;
+    //const u_int64_t flops_per_iter = sites_on_node*(11*15 + 1205)/2;
     param->flops_per_iter = 0;
     long flops_per_iter=0;
     // From the portion of code we are looking at there is 157(sites_on_node)/2 for the resid calc
@@ -273,7 +273,7 @@ void lqcd_initialize( lqParam *param, int num_nodes, int my_rank, int iterations
     long nsCompute;
     if(param->flops_per_iter){
         param->compute_nseconds = ( (double) param->flops_per_iter / ( (double)param->pe_flops / 1000000000.0 ) );
-        //int nsCompute  = (uint64_t) params.find("arg.computetime", (uint64_t) compute_nseconds);
+        //int nsCompute  = (u_int64_t) params.find("arg.computetime", (u_int64_t) compute_nseconds);
         nsCompute = 1;
         if( my_rank == 0)
             printf("LQCD nsCompute set:%ld ns\n", nsCompute);
@@ -322,7 +322,7 @@ int main(int argc, char* argv[]) {
     int vars = 1;
     long sleep = 1000;
     int compt = 1;
-    uint64_t peflops;
+    u_int64_t peflops;
     MPI_Request *posRequests;
     MPI_Request *negRequests;
     MPI_Status *status_list;
@@ -487,6 +487,7 @@ int main(int argc, char* argv[]) {
 
     int transsz = 500;
 
+    double t1 =MPI_Wtime();
     // Allocate data buffers
     for (int i = 0; i < 8; ++i )
     {
@@ -768,5 +769,9 @@ int main(int argc, char* argv[]) {
     free(posRequests);
     free(negRequests);
     free(status_list);
+    double t2 =MPI_Wtime();
+    if( me == 0 ) {
+       printf("Solver Time %e Seconds\n", t2-t1);
+    }
     MPI_Finalize();
 }
