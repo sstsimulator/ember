@@ -5,7 +5,7 @@ LIBS=
 
 all: randominc
 
-randominc: bench-atomic-inc/randominc.c
+randominc: randominc.c
 	$(OSHMEM_CC) $(OSHMEM_C_FLAGS) -o $@ $< $(LIBS)
 
 clean:
